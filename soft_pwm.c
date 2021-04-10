@@ -2,7 +2,7 @@
  * @file soft_pwm.h
  * @author Julian Bustamante N
  * @brief software pwm driver
- * @version 0.0.1
+ * @version 0.1.0
  * @date 2021-04-09
  * 
  * @copyright Copyright (c) 2021
@@ -17,29 +17,28 @@
 static int16_t SFPWM_Rounding(float num);
 
 void SFPWM_Init(SFPWM_data_t *obj, write_pin_fcn _write_pin, float basetiming ,float freq )
-{   obj->write_pin = _write_pin ; 
-    obj->frequency = freq;
-    obj->period = (1 / obj->frequency);  //0.1
-    obj->basetime = basetiming;   //0.001
-    obj->count = 0;
+{   obj->private.write_pin = _write_pin ; 
+    obj->private.frequency = freq;
+    obj->private.period = (1 / obj->private.frequency);  //0.1
+    obj->private.basetime = basetiming;   //0.001
+    obj->private.count = 0;
+    obj->private.Tcomparar = (obj->private.period *(1/obj->private.basetime));
 }
 
 void SFPWM_Update(SFPWM_data_t *obj){
-
-    ++obj->count;
-
-    if (   SFPWM_Rounding( (obj->period *(1/obj->basetime)) )   == obj->count ){  // overflow period
-        obj->count = 0;  // overflow
+    ++obj->private.count;
+    if (   SFPWM_Rounding( obj->private.Tcomparar )   == obj->private.count ){  // overflow period
+        obj->private.count = 0;  // overflow
     }
 
-    obj->statepin = ( obj->count  < obj->dutyc ) ? 1 : 0 ;
-    if( obj->write_pin != NULL){
-        obj->write_pin( obj->statepin ); // 10 < 127  
+    obj->statepin = ( SFPWM_GetCount(obj)  < obj->private.dutyc ) ? 1 : 0 ;
+    if( obj->private.write_pin != NULL){
+        obj->private.write_pin( obj->statepin ); // 10 < 127  
     }
 }
 
 uint16_t SFPWM_GetCount(SFPWM_data_t *obj){
-    return obj->count;
+    return obj->private.count;
 }
 
 uint16_t SFPWM_GetStatePin(SFPWM_data_t *obj){
@@ -47,9 +46,7 @@ uint16_t SFPWM_GetStatePin(SFPWM_data_t *obj){
 }
 
 void SFPWM_SetDuty(SFPWM_data_t *obj , uint16_t duty){
-    //obj->dutyc = (duty*obj->period  ) / SFPWM_MAX_PERCENTAGE;
-    obj->dutyc = SFPWM_Rounding(  ((duty*(obj->period * (1/obj->basetime)) ) / SFPWM_MAX_PERCENTAGE)  )  ;
-    //printf(" 1/bt=%d seg=%d \n",(uint16_t)(1/obj->basetime) , (obj->period * (1/obj->basetime)));
+    obj->private.dutyc = SFPWM_Rounding(  ( (duty*( obj->private.Tcomparar ) ) / SFPWM_MAX_PERCENTAGE )  )  ;
 }
 
 static int16_t SFPWM_Rounding(float num){
