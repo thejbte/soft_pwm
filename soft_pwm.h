@@ -2,7 +2,7 @@
  * @file soft_pwm.h
  * @author Julian Bustamante N
  * @brief software pwm driver
- * @version 0.0.1
+ * @version 0.1.0
  * @date 2021-04-09
  * 
  * @copyright Copyright (c) 2021
@@ -41,10 +41,15 @@ typedef struct  {
     volatile uint16_t count;
     uint16_t dutyc;
     write_pin_fcn write_pin; 
-    uint8_t statepin;
+    uint16_t Tcomparar;
     float frequency;
     float basetime;
     float period;
+}SFPWM_private_t;
+
+typedef struct  {
+    uint8_t statepin;
+    SFPWM_private_t private;
 }SFPWM_data_t;
 
 /**
